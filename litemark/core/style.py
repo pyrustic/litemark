@@ -1,15 +1,64 @@
 class Style:
     def __init__(self):
-        self.text_background = None
+        # background color of the text widget
+        self.background_color = None
+        # default style
         self.text_color = None
-        self.text_font = None
+        self.text_font_family = None
+        self.text_font_size = None
+        self.text_font_weight = None
+        self.text_font_slant = None
+        # heading style
         self.heading_color = None
+        self.heading_font_family = None
+        self.heading_font_size = None
+        self.heading_font_weight = None
+        self.heading_font_slant = None
+        # bold style
         self.bold_color = None
+        self.bold_font_family = None
+        self.bold_font_size = None
+        self.bold_font_weight = None
+        self.bold_font_slant = None
+        # italic style
         self.italic_color = None
+        self.italic_font_family = None
+        self.italic_font_size = None
+        self.italic_font_weight = None
+        self.italic_font_slant = None
+        # warning style
         self.warning_color = None
+        self.warning_font_family = None
+        self.warning_font_size = None
+        self.warning_font_weight = None
+        self.warning_font_slant = None
+        # overstrike color
         self.overstrike_color = None
+        self.overstrike_font_family = None
+        self.overstrike_font_size = None
+        self.overstrike_font_weight = None
+        self.overstrike_font_slant = None
+        # link color
         self.link_color = None
-        self.reference_color = None
+        self.link_font_family = None
+        self.link_font_size = None
+        self.link_font_weight = None
+        self.link_font_slant = None
+        # inlink style
+        self.inlink_color = None
+        self.inlink_font_family = None
+        self.inlink_font_size = None
+        self.inlink_font_weight = None
+        self.inlink_font_slant = None
+        # codeblock title style
         self.codeblock_title_color = None
+        self.codeblock_title_font_family = None
+        self.codeblock_title_font_size = None
+        self.codeblock_title_font_weight = None
+        self.codeblock_title_font_slant = None
+        # codeblock style
         self.codeblock_color = None
-        self.codeblock_font = None
+        self.codeblock_font_family = None
+        self.codeblock_font_size = None
+        self.codeblock_font_weight = None
+        self.codeblock_font_slant = None

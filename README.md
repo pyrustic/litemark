@@ -44,14 +44,9 @@ The output:
 ```
 Token(name='STRING', data='Hello ')
 Token(name='BOLD', data='World')
-Token(name='STRING', data=' ')
-Token(name='STRING', data='! ')
-Token(name='STRING', data='Visit ')
-Token(name='STRING', data='the ')
+Token(name='STRING', data=' ! Visit the ')
 Token(name='LINK', data=('repository', 'https://github.com/pyrustic/litemark', ''))
-Token(name='STRING', data=' ')
-Token(name='STRING', data='!')
-Token(name='STRING', data='')
+Token(name='STRING', data=' !')
 ```
 The formal names of the tokens are defined in `litemark.Element`:
 ```python
@@ -63,14 +58,15 @@ class Element:
     WARNING = "WARNING"
     OVERSTRIKE = "OVERSTRIKE"
     IMAGE = "IMAGE"
-    INTRALINK = "INTRALINK"
+    INLINK = "INLINK"
     LINK = "LINK"
+    STRING = "STRING"
 ```
 The token's `data` field represents a string for all elements except the following:
 - **Element.CODEBLOCK**: 2-tuple (str-title, str-content)
 - **Element.HEADING**: 2-tuple (int-level, str-content)
 - **Element.IMAGE**: 3-tuple (str-inline, str-path, str-alt)
-- **Element.INTRALINK**: 3-tuple (str-inline, str-path, str-alt)
+- **Element.INLINK**: 3-tuple (str-inline, str-path, str-alt)
 - **Element.LINK**: 3-tuple (str-inline, str-URL, str-alt)
 
 ### Command line interface
@@ -100,14 +96,18 @@ litemark_filename = "/home/alex/demo/document.md"
 # your GUI
 gui = tk.Tk()
 gui.geometry("500x500+0+0")
+
 # let's embed a Litemark Viewer in this GUI
+
 # -- text widget
 text_widget = tk.Text(gui)
 text_widget.pack(expand=1, fill=tk.BOTH)
+
 # -- the viewer instance
 viewer = litemark.Viewer(widget=text_widget, root=root_directory)
 viewer.open(litemark_filename)
 viewer.readonly = True
+
 # done !
 gui.mainloop()
 ```

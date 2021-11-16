@@ -1,24 +1,92 @@
 import tkinter as tk
 import webbrowser
 import pkgutil
-import os
-import os.path
+import pathlib
 from tkinter.font import Font
 from litemark.core import scanner
 from litemark.core.scanner import Element
 from litemark.core.util import Tooltip
-import pathlib
 from litemark.core.style import Style
 
 
 IMAGES_CACHE = []
 
 
+def get_light_style():
+    style = Style()
+    # default style
+    style.text_color = "#303030"
+    style.text_font_family = "DejaVu Sans"
+    style.text_font_size = 11
+    style.text_font_weight = "normal"
+    style.text_font_slant = "roman"
+    # heading style
+    style.heading_color = "#454545"
+    style.heading_font_family = None
+    style.heading_font_size = None
+    style.heading_font_weight = "bold"
+    style.heading_font_slant = None
+    # bold style
+    style.bold_color = "#505050"
+    style.bold_font_family = None
+    style.bold_font_size = None
+    style.bold_font_weight = "bold"
+    style.bold_font_slant = None
+    # italic style
+    style.italic_color = None
+    style.italic_font_family = None
+    style.italic_font_size = None
+    style.italic_font_weight = None
+    style.italic_font_slant = "italic"
+    # warning style
+    style.warning_color = "red"
+    style.warning_font_family = None
+    style.warning_font_size = None
+    style.warning_font_weight = None
+    style.warning_font_slant = None
+    # overstrike color
+    style.overstrike_color = None
+    style.overstrike_font_family = None
+    style.overstrike_font_size = None
+    style.overstrike_font_weight = None
+    style.overstrike_font_slant = None
+    # link color
+    style.link_color = "blue"
+    style.link_font_family = None
+    style.link_font_size = None
+    style.link_font_weight = None
+    style.link_font_slant = None
+    # inlink style
+    style.inlink_color = "blue"
+    style.inlink_font_family = None
+    style.inlink_font_size = None
+    style.inlink_font_weight = None
+    style.inlink_font_slant = None
+    # codeblock title style
+    style.codeblock_title_color = "#B0B016"
+    style.codeblock_title_font_family = None
+    style.codeblock_title_font_size = None
+    style.codeblock_title_font_weight = "bold"
+    style.codeblock_title_font_slant = None
+    # codeblock style
+    style.codeblock_color = "#9A9A00"
+    style.codeblock_font_family = "DejaVu Sans Mono"
+    style.codeblock_font_size = 11
+    style.codeblock_font_weight = None
+    style.codeblock_font_slant = None
+    return style
+
+
+def get_dark_style():  # TODO: implement the dark style
+    return get_light_style()
+
+
 class Viewer:
-    def __init__(self, widget=None, root=None, style=None, on_browse=None):
+    def __init__(self, widget=None, root=None,
+                 style=get_light_style(), on_browse=None):
         self._widget = widget
         self._root = root
-        self._style = style
+        self._style = style if style else get_light_style()
         self._on_browse = on_browse
         self._tokens = None
         self._anchors = {}
@@ -29,20 +97,12 @@ class Viewer:
         return self._widget
 
     @property
-    def style(self):
-        return self._style
-
-    @property
     def root(self):
         return self._root
 
     @property
-    def redirection(self):
-        return self._redirection
-
-    @redirection.setter
-    def redirection(self, val):
-        self._redirection = val
+    def style(self):
+        return self._style
 
     @property
     def readonly(self):
@@ -62,13 +122,16 @@ class Viewer:
     def tokens(self):
         return self._tokens
 
-    def render(self, data, ignore=None):
+    def render(self, data):
         """data = string or tokens"""
+        ignore = None  # TODO: delete all mentions of ignore !
         if isinstance(data, str):
             data = scanner.scan(data)
         if not data:
             return False
+        readonly_cache = self.readonly
         self.clear()
+        define_tags(self._widget, self._style)
         self._tokens = data
         if not ignore:
             ignore = tuple()
@@ -80,11 +143,12 @@ class Viewer:
                self._style, self._anchors, self._root,
                self._on_browse)
         remove_empty_lines(self._widget)
+        self.readonly = readonly_cache
         return True
 
     def open(self, path):
         with open(path, "r") as file:
-            data = file.read
+            data = file.read()
         self.render(data)
 
     def anchor(self, name):
@@ -97,14 +161,15 @@ class Viewer:
 
     def clear(self):
         self._widget.config(state="normal")
+        for tag in self._widget.tag_names():
+            self._widget.tag_delete(tag)
         self._widget.delete("1.0", tk.END)
         self._anchors = {}
         self._tokens = None
         IMAGES_CACHE[:] = []
 
     def _setup(self):
-        if not self._style:
-            self._style = Style()
+        self._style = setup_style(self._style)
         if not isinstance(self._widget, tk.Text):
             raise WidgetError("Only tk.Text widget and subclasses are allowed")
         self._widget.config(state="normal")
@@ -112,10 +177,12 @@ class Viewer:
                           lambda e, widget=self._widget: widget.focus_set())
         self._widget.bind("<Destroy>",
                           lambda event: free_images_cache(), "+")
-        self._widget.config(font=self._style.text_font,
-                            background=self._style.text_background,
+        font = Font(family=self._style.text_font_family,
+                    size=self._style.text_font_size,
+                    weight=self._style.text_font_weight,
+                    slant=self._style.text_font_slant)
+        self._widget.config(font=font,
                             foreground=self._style.text_color)
-        apply_tags(self._widget, self._style)
 
 
 def render(viewer, widget, tokens, ignore,
@@ -147,8 +214,8 @@ def render(viewer, widget, tokens, ignore,
             widget.insert(tk.END, token.data, "overstrike")
         elif token.name == Element.IMAGE:
             insert_image(widget, i, token.data, root)
-        elif token.name == Element.INTRALINK:
-            insert_intralink(viewer, widget, i, token.data,
+        elif token.name == Element.INLINK:
+            insert_inlink(viewer, widget, i, token.data,
                              style, on_browse)
         elif token.name == Element.LINK:
             insert_link(viewer, widget, i, token.data, style, on_browse)
@@ -156,64 +223,77 @@ def render(viewer, widget, tokens, ignore,
             raise TokenError("Invalid token '{}'".format(token.name))
 
 
-def apply_tags(widget, style):
-    font = Font(font=widget.cget("font"))
-    actual_font_size = font.actual()["size"]
+def define_tags(widget, style):
+    text_font_size = style.text_font_size
     # Heading
-    font_heading_1 = Font(size=actual_font_size+6, weight="bold")
-    font_heading_2 = Font(size=actual_font_size+5, weight="bold")
-    font_heading_3 = Font(size=actual_font_size+4, weight="bold")
-    font_heading_4 = Font(size=actual_font_size+3, weight="bold")
-    font_heading_5 = Font(size=actual_font_size+2, weight="bold")
-    font_heading_6 = Font(size=actual_font_size+1, weight="bold")
-    widget.tag_configure("heading_1", font=font_heading_1,
-                         foreground=style.heading_color,
-                         spacing1=1, spacing3=5)
-    widget.tag_configure("heading_2", font=font_heading_2,
-                         foreground=style.heading_color,
-                         spacing1=1, spacing3=5)
-    widget.tag_configure("heading_3", font=font_heading_3,
-                         foreground=style.heading_color,
-                         spacing1=1, spacing3=5)
-    widget.tag_configure("heading_4", font=font_heading_4,
-                         foreground=style.heading_color,
-                         spacing1=1, spacing3=5)
-    widget.tag_configure("heading_5", font=font_heading_5,
-                         foreground=style.heading_color,
-                         spacing1=1, spacing3=5)
-    widget.tag_configure("heading_6", font=font_heading_6,
-                         foreground=style.heading_color,
-                         spacing1=1, spacing3=5)
+    heading_1_font = Font(size=text_font_size+6)
+    heading_2_font = Font(size=text_font_size+5)
+    heading_3_font = Font(size=text_font_size+4)
+    heading_4_font = Font(size=text_font_size+3)
+    heading_5_font = Font(size=text_font_size+2)
+    heading_6_font = Font(size=text_font_size+1)
+    for font in (heading_1_font, heading_2_font,
+                 heading_3_font, heading_4_font,
+                 heading_5_font, heading_6_font):
+        font.config(family=style.heading_font_family,
+                    weight=style.heading_font_weight,
+                    slant=style.heading_font_slant)
+    for tag, font in (("heading_1", heading_1_font),
+                      ("heading_2", heading_2_font),
+                      ("heading_3", heading_3_font),
+                      ("heading_4", heading_4_font),
+                      ("heading_5", heading_5_font),
+                      ("heading_6", heading_6_font)):
+        widget.tag_configure(tag, font=font,
+                             foreground=style.heading_color,
+                             spacing1=1, spacing3=7)
     # bold
-    font_bold = Font(weight="bold")
-    widget.tag_configure("bold", font=font_bold,
+    bold_font = Font(family=style.bold_font_family,
+                     size=style.bold_font_size,
+                     weight=style.bold_font_weight,
+                     slant=style.bold_font_slant)
+    widget.tag_configure("bold", font=bold_font,
                          foreground=style.bold_color)
     # italic
-    font_italic = Font(slant="italic")
-    widget.tag_configure("italic", font=font_italic,
+    italic_font = Font(family=style.italic_font_family,
+                       size=style.italic_font_size,
+                       weight=style.italic_font_weight,
+                       slant=style.italic_font_slant)
+    widget.tag_configure("italic", font=italic_font,
                          foreground=style.italic_color)
     # warning
-    font_warning = Font()
-    warning_color = style.warning_color if style.warning_color else "red"
-    widget.tag_configure("warning", font=font_warning,
-                         foreground=warning_color)
+    warning_font = Font(family=style.warning_font_family,
+                        size=style.warning_font_size,
+                        weight=style.warning_font_weight,
+                        slant=style.warning_font_slant)
+    widget.tag_configure("warning", font=warning_font,
+                         foreground=style.warning_color)
     # overstrike
-    font_overstrike = Font(overstrike=1)
-    widget.tag_configure("overstrike", font=font_overstrike,
+    overstrike_font = Font(family=style.overstrike_font_family,
+                           size=style.overstrike_font_size,
+                           weight=style.overstrike_font_weight,
+                           slant=style.overstrike_font_slant,
+                           overstrike=1)
+    widget.tag_configure("overstrike", font=overstrike_font,
                          foreground=style.overstrike_color)
     # codeblock-title
-    widget.tag_configure("codeblock-title",
-                         foreground=style.codeblock_title_color)
+    codeblock_title_font = Font(family=style.codeblock_title_font_family,
+                                size=style.codeblock_title_font_size,
+                                weight=style.codeblock_title_font_weight,
+                                slant=style.codeblock_title_font_slant)
+    widget.tag_configure("codeblock-title", font=codeblock_title_font,
+                         foreground=style.codeblock_title_color,
+                         spacing1=1, spacing3=3)
     # on_enter and on_leave event handlers
     on_enter = lambda event, widget=widget: widget.config(cursor="hand1")
     on_leave = lambda event, widget=widget: widget.config(cursor="")
-    # bind hand icon to codeblock and link and intralink (enter vs leave)
+    # bind hand icon to codeblock and link and inlink (enter vs leave)
     widget.tag_bind("codeblock", "<Enter>", on_enter, "+")
     widget.tag_bind("codeblock", "<Leave>", on_leave, "+")
     widget.tag_bind("link", "<Enter>", on_enter, "+")
     widget.tag_bind("link", "<Leave>", on_leave, "+")
-    widget.tag_bind("intralink", "<Enter>", on_enter, "+")
-    widget.tag_bind("intralink", "<Leave>", on_leave, "+")
+    widget.tag_bind("inlink", "<Enter>", on_enter, "+")
+    widget.tag_bind("inlink", "<Leave>", on_leave, "+")
 
 
 def insert_link(viewer, widget, index, data, style, on_browse):
@@ -225,8 +305,12 @@ def insert_link(viewer, widget, index, data, style, on_browse):
             return
     title = title if title else location
     tag_name = "link_{}".format(index)
+    font = Font(family=style.link_font_family,
+                size=style.link_font_size,
+                weight=style.link_font_weight,
+                slant=style.link_font_slant)
     widget.tag_configure(tag_name, foreground=style.link_color,
-                         font=style.text_font)
+                         font=font)
     tooltip = Tooltip(widget, location)
     widget.tag_bind(tag_name, "<Enter>",
                     lambda e, widget=widget, tag_name=tag_name,
@@ -257,7 +341,11 @@ def insert_link(viewer, widget, index, data, style, on_browse):
 def insert_codeblock(widget, index, data, style):
     title, code = data
     tag_name = "codeblock_{}".format(index)
-    widget.tag_configure(tag_name, font=style.codeblock_font,
+    font = Font(family=style.codeblock_font_family,
+                size=style.codeblock_font_size,
+                weight=style.codeblock_font_weight,
+                slant=style.codeblock_font_slant)
+    widget.tag_configure(tag_name, font=font,
                          foreground=style.codeblock_color)
     widget.tag_bind(tag_name, "<Enter>",
                     lambda e, widget=widget, tag_name=tag_name:
@@ -277,17 +365,21 @@ def insert_codeblock(widget, index, data, style):
     widget.insert(tk.END, code, ("codeblock", tag_name))
 
 
-def insert_intralink(viewer, widget, index, data, style, on_browse):
+def insert_inlink(viewer, widget, index, data, style, on_browse):
     title, location, description = data
     if on_browse:
-        info = Info(viewer, widget, "intralink", location)
+        info = Info(viewer, widget, "inlink", location)
         location = on_browse(info)
         if not location:
             return
     title = title if title else location
-    tag_name = "intralink_{}".format(index)
+    tag_name = "inlink_{}".format(index)
+    font = Font(family=style.inlink_font_family,
+                size=style.inlink_font_size,
+                weight=style.inlink_font_weight,
+                slant=style.inlink_font_slant)
     widget.tag_configure(tag_name, foreground=style.link_color,
-                         font=style.text_font)
+                         font=font)
     tooltip = Tooltip(widget, location)
     widget.tag_bind(tag_name, "<Enter>",
                     lambda e, widget=widget, tag_name=tag_name,
@@ -303,7 +395,7 @@ def insert_intralink(viewer, widget, index, data, style, on_browse):
     widget.tag_bind(tag_name, "<ButtonRelease-1>",
                     lambda e, widget=widget, tag_name=tag_name,
                            viewer=viewer, location=location:
-                    on_button_release_1_intralink(viewer, widget,
+                    on_button_release_1_inlink(viewer, widget,
                                                   tag_name, location), "+")
     widget.tag_bind(tag_name, "<ButtonPress-3>",
                     lambda e, widget=widget, tag_name=tag_name:
@@ -312,7 +404,7 @@ def insert_intralink(viewer, widget, index, data, style, on_browse):
                     lambda e, widget=widget, tag_name=tag_name,
                            location=location:
                     on_button_release_3_link(widget, tag_name, location), "+")
-    widget.insert(tk.END, title, ("intralink", tag_name))
+    widget.insert(tk.END, title, ("inlink", tag_name))
 
 
 def insert_image(widget, index, data, root):
@@ -331,18 +423,6 @@ def insert_image(widget, index, data, root):
     IMAGES_CACHE.append(photo_image)
     if title:
         widget.insert(tk.END, "\n"+title, "italic")
-
-
-def create_image_tile(parent, img, index):
-    # canvas
-    photo_image = tk.PhotoImage(data=img)
-    parent.image_create(tk.END, image=photo_image)
-    try:
-        parent.image
-    except AttributeError as e:
-        parent.images = []
-    finally:
-        parent.images.append(photo_image)
 
 
 def open_website(url, widget):
@@ -398,13 +478,27 @@ def on_button_release_1_link(widget, tag_name, location):
     open_website(location, widget)
 
 
-def on_button_release_1_intralink(viewer, widget, tag_name, location):
+def on_button_release_1_inlink(viewer, widget, tag_name, location):
     font = Font(font=widget.tag_cget(tag_name, "font"))
     actual = font.actual()
     actual["underline"] = 0
     font = Font(**actual)
     widget.tag_configure(tag_name, font=font)
-    viewer.anchor(location)
+    # move to
+    path = ""
+    anchor = ""
+    if "#" in location:
+        for char in location:
+            if char == "#" or anchor:
+                anchor += char
+            else:
+                path += char
+    else:
+        path = location
+    if path:
+        viewer.open(path)
+    if anchor:
+        viewer.anchor(anchor)
 
 
 def on_enter_codeblock(widget):
@@ -467,6 +561,109 @@ def remove_empty_lines(widget):
 
 def free_images_cache():
     IMAGES_CACHE[:] = []
+
+
+def setup_style(style):
+    # heading style
+    if not style.heading_color:
+        style.heading_color = style.text_color
+    if not style.heading_font_family:
+        style.heading_font_family = style.text_font_family
+    if not style.heading_font_size:
+        style.heading_font_size = style.text_font_size
+    if not style.heading_font_weight:
+        style.heading_font_weight = style.text_font_weight
+    if not style.heading_font_slant:
+        style.heading_font_slant = style.text_font_slant
+    # bold style
+    if not style.bold_color:
+        style.bold_color = style.text_color
+    if not style.bold_font_family:
+        style.bold_font_family = style.text_font_family
+    if not style.bold_font_size:
+        style.bold_font_size = style.text_font_size
+    if not style.bold_font_weight:
+        style.bold_font_weight = style.text_font_weight
+    if not style.bold_font_slant:
+        style.bold_font_slant = style.text_font_slant
+    # italic style
+    if not style.italic_color:
+        style.italic_color = style.text_color
+    if not style.italic_font_family:
+        style.italic_font_family = style.text_font_family
+    if not style.italic_font_size:
+        style.italic_font_size = style.text_font_size
+    if not style.italic_font_weight:
+        style.italic_font_weight = style.text_font_weight
+    if not style.italic_font_slant:
+        style.italic_font_slant = style.text_font_slant
+    # warning style
+    if not style.warning_color:
+        style.warning_color = style.text_color
+    if not style.warning_font_family:
+        style.warning_font_family = style.text_font_family
+    if not style.warning_font_size:
+        style.warning_font_size = style.text_font_size
+    if not style.warning_font_weight:
+        style.warning_font_weight = style.text_font_weight
+    if not style.warning_font_slant:
+        style.warning_font_slant = style.text_font_slant
+    # overstrike style
+    if not style.overstrike_color:
+        style.overstrike_color = style.text_color
+    if not style.overstrike_font_family:
+        style.overstrike_font_family = style.text_font_family
+    if not style.overstrike_font_size:
+        style.overstrike_font_size = style.text_font_size
+    if not style.overstrike_font_weight:
+        style.overstrike_font_weight = style.text_font_weight
+    if not style.overstrike_font_slant:
+        style.overstrike_font_slant = style.text_font_slant
+    # link style
+    if not style.link_color:
+        style.link_color = style.text_color
+    if not style.link_font_family:
+        style.link_font_family = style.text_font_family
+    if not style.link_font_size:
+        style.link_font_size = style.text_font_size
+    if not style.link_font_weight:
+        style.link_font_weight = style.text_font_weight
+    if not style.link_font_slant:
+        style.link_font_slant = style.text_font_slant
+    # inlink style
+    if not style.inlink_color:
+        style.inlink_color = style.link_color
+    if not style.inlink_font_family:
+        style.inlink_font_family = style.link_font_family
+    if not style.inlink_font_size:
+        style.inlink_font_size = style.link_font_size
+    if not style.inlink_font_weight:
+        style.inlink_font_weight = style.link_font_weight
+    if not style.inlink_font_slant:
+        style.inlink_font_slant = style.link_font_slant
+    # codeblock title style
+    if not style.codeblock_title_color:
+        style.codeblock_title_color = style.text_color
+    if not style.codeblock_title_font_family:
+        style.codeblock_title_font_family = style.text_font_family
+    if not style.codeblock_title_font_size:
+        style.codeblock_title_font_size = style.text_font_size
+    if not style.codeblock_title_font_weight:
+        style.codeblock_title_font_weight = style.text_font_weight
+    if not style.codeblock_title_font_slant:
+        style.codeblock_title_font_slant = style.text_font_slant
+    # codeblock style
+    if not style.codeblock_color:
+        style.codeblock_color = style.text_color
+    if not style.codeblock_font_family:
+        style.codeblock_font_family = style.text_font_family
+    if not style.codeblock_font_size:
+        style.codeblock_font_size = style.text_font_size
+    if not style.codeblock_font_weight:
+        style.codeblock_font_weight = style.text_font_weight
+    if not style.codeblock_font_slant:
+        style.codeblock_font_slant = style.text_font_slant
+    return style
 
 
 class Info:

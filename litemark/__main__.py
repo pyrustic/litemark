@@ -4,13 +4,13 @@ import sys
 import os
 import os.path
 from tkinter.scrolledtext import ScrolledText
-from litemark import Viewer, center_window, get_default_style
+from litemark import Viewer, center_window, get_light_style
 
 
 def set_root_style(root):
     root.option_add("*Text.highlightThickness", 0)
     root.option_add("*Text.borderWidth", 0)
-    root.option_add("*Text.selectBackground", "#A8E1FF")
+    root.option_add("*Text.selectBackground", "#CCEBFF")
     root.option_add("*Text.inactiveSelectBackground", "#A8E1FF")
     root.option_add("*Scrollbar.troughColor", "white")
     root.option_add("*Scrollbar.activeBackground", "#E2E2E2")
@@ -78,7 +78,7 @@ def refresh(root, viewer):
 def main():
     # root
     root = tk.Tk()
-    root.geometry("666x666")
+    root.geometry("666x600")
     root.config(background="white")
     root.title("Litemark Viewer | Pyrustic Open Ecosystem")
     set_root_style(root)
@@ -87,7 +87,7 @@ def main():
                                padx=10, pady=10, wrap="word")
     text_widget.pack(expand=1, fill=tk.BOTH)
     # viewer
-    litemark_style = get_default_style()
+    litemark_style = get_light_style()
     root_dir, data = get_document()
     viewer = Viewer(text_widget, root=root_dir, style=litemark_style)
     # render

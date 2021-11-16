@@ -7,11 +7,11 @@ You are reading the Litemark demo written in Litemark in a file named _litemark-
 ## Quick Overview
 This is the [link](https://github.com/pyrustic/litemark) to the *GitHub* repository of this project. To check the full URL of the link, just hover over it. Right click on the link to copy it.
 
-You can also reference a specific %[heading](#_Welcome) in the current document or in another Litemark document, thanks to the *intralink* feature.
+You can also reference a specific @[heading](#_Welcome) in the current document or in another Litemark document, thanks to the *inlink* feature.
 
 Make your text _italic_, *bold* or ~overstrike~ it.
 
-!Warning: yes, with Litemark you can grab the reader's attention when needed.!
+!Warning: yes, with Litemark you can grab the reader's attention when needed \!!
 
 You can insert images in your Litemark document (see the beautiful header of this demo).
 
