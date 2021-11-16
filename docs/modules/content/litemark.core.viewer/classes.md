@@ -61,7 +61,7 @@ class Viewer(object):
     
     """
 
-    def __init__(self, widget=None, root=None, style=<litemark.core.style.Style object at 0x7f3217d1d400>, on_browse=None):
+    def __init__(self, widget=None, root=None, style=<litemark.core.style.Style object at 0x7f60ff60a400>, on_browse=None):
         """
         Initialize self.  See help(type(self)) for accurate signature.
         """
