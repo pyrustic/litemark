@@ -63,7 +63,7 @@ def scan(text):
 
 
 def get_compiled_regex():
-    pattern = '|'.join("(?P<{}>{})".format(name, regex)
+    pattern = "|".join("(?P<{}>{})".format(name, regex)
                        for name, regex in SPECIFICATION)
     return re.compile(pattern, re.MULTILINE)
 

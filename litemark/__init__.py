@@ -9,5 +9,5 @@ __all__ = ["scan", "Element", "Viewer", "get_light_style", "Style"]
 
 
 def scan(text):
-    """Returns an iterator. If you need a list: list(scan(text))"""
+    """Returns a generator. If you need a list: list(scan(text))"""
     return scanner.scan(text)
