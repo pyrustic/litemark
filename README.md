@@ -9,7 +9,7 @@ When you run `litemark` from the command line interface without any arguments, t
 
 
 <div align="center">
-    <img src="https://raw.githubusercontent.com/pyrustic/misc/master/media/litemark-rendered.png" alt="Figure" width="680">
+    <img src="https://raw.githubusercontent.com/pyrustic/misc/master/media/litemark-rendered.png" alt="Figure" width="668">
     <p align="center">
     <i> Litemark demo rendered in the Litemark Viewer </i>
     </p>
