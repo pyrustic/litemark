@@ -18,7 +18,7 @@ When you run `litemark` from the command line interface without any arguments, t
 <br>
 
 <div align="center">
-    <img src="https://raw.githubusercontent.com/pyrustic/misc/master/media/litemark-plain-text.png" alt="Figure" width="713">
+    <img src="https://raw.githubusercontent.com/pyrustic/misc/master/media/litemark-plain-text.png" alt="Figure" width="700">
     <p align="center">
     <i> litemark-demo.md (plain text) </i>
     </p>
